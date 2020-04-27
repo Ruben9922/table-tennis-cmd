@@ -61,6 +61,9 @@ class Helpers:
     def center(self, object_size):
         return self.window_min + ((self.window_size - 1) // 2) - (object_size // 2)
 
+    def right_align(self, object_size):
+        return self.window_max - object_size + 1
+
     # Convert a 2D NumPy array into a set of tuples
     # Each row in the array becomes a tuple
     @staticmethod
@@ -84,6 +87,7 @@ class Helpers:
 #         return self.position + self.velocity
 
 
+# TODO: Consistency with using / not using window_min instead of 0
 # TODO: Put this into a Python package at some point
 class GameObject:
     # TODO: Allow aligning
@@ -156,13 +160,27 @@ class Game:
         self.left_paddle.position = np.array([5, 5])
         self.right_paddle = GameObject.create_vertical_line(stdscr, self.helpers, 5, "X")
         self.right_paddle.position = np.array([5, self.helpers.window_size[1] - 5])
+        self.left_score = 0
+        self.right_score = 0
 
     def update(self, key):
-        # Check for collision between ball and walls
+        # Check for collision between ball and top & bottom walls
+        # If collision, then make ball "bounce" by negating its vertical velocity
         if self.ball.next_position[0] == 0 or self.ball.next_position[0] >= self.helpers.window_max[0]:
             self.ball.velocity[0] *= -1
-        if self.ball.next_position[1] == 0 or self.ball.next_position[1] >= self.helpers.window_max[1]:
-            self.ball.velocity[1] *= -1
+
+        # Check for collision between ball and left & right walls
+        if self.ball.next_position[1] == 0:
+            # Increment right score
+            self.right_score += 1
+
+            self.reset_ball()
+
+        if self.ball.next_position[1] >= self.helpers.window_max[1]:
+            # Increment left score
+            self.left_score += 1
+
+            self.reset_ball()
 
         # Check for collision between ball and paddles
         if self.ball.collides_with(self.left_paddle) or self.ball.collides_with(self.right_paddle):
@@ -213,6 +231,15 @@ class Game:
         self.ball.draw()
         self.left_paddle.draw()
         self.right_paddle.draw()
+
+        # Draw score
+        self.stdscr.addstr(0, 0, str(self.left_score))
+        self.stdscr.addstr(0, self.helpers.right_align(len(str(self.right_score)))[1], str(self.right_score))
+
+    def reset_ball(self):
+        # Reset ball
+        self.ball.position = self.helpers.center(self.ball.size)
+        self.ball.velocity[1] *= -1
 
     def play(self):
         self.stdscr.timeout(50)
