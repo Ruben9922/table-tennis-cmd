@@ -166,7 +166,7 @@ class Game:
     def update(self, key):
         # Check for collision between ball and top & bottom walls
         # If collision, then make ball "bounce" by negating its vertical velocity
-        if self.ball.next_position[0] == 0 or self.ball.next_position[0] >= self.helpers.window_max[0]:
+        if self.ball.next_position[0] < 0 or self.ball.next_position[0] > self.helpers.window_max[0]:
             self.ball.velocity[0] *= -1
 
         # Check for collision between ball and left & right walls
